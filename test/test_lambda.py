@@ -15,10 +15,20 @@ class TestLambdaHandler(unittest.TestCase):
         context = {}
         response = lambda_handler(event, context)
         self.assertEqual(response['statusCode'], 200)
-        # Assert other properties of the response as needed
         self.assertIn('body', response)
         body = json.loads(response['body'])
-        self.assertEqual(body['some_key'], 'expected_value')
+        self.assertIn('query', body)
+        self.assertIn('result', body)
+        
+        print("Request:")
+        print(json.dumps(event, indent=2))
+        
+        print("\nResponse:")
+        print(json.dumps(response, indent=2))
+        
+
+        print("\nChatbot Response:")
+        print(body['result'])
 
 if __name__ == '__main__':
     unittest.main()
