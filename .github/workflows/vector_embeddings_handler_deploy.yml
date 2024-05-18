@@ -1,0 +1,24 @@
+name: vector_embeddings_handler_deploy
+on: [push]
+jobs:
+  vector_embeddings_handler_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+      - name: create_deployment_zip
+        run: |
+          sudo apt install zip
+          mkdir -p ./deployment_zip 
+          pip install snowflake-connector-python --platform manylinux2010_x86_64 --only-binary=:all: -t ./deployment_zip
+          cp ./chat_handler/lambda_function.py  ./deployment_zip
+          cd deployment_zip 
+          zip -r lambda_zip.zip *
+      - name: lambda_code_update
+        run: |
+          aws lambda update-function-code --function-name compost-chatbot-vector-embeddings-handler --zip-file fileb://./deployment_zip/lambda_zip.zip
