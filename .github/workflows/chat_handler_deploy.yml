@@ -59,6 +59,8 @@ jobs:
           done
           echo "Final STATUS: $STATUS"
           IMAGE_URI=$(echo $LAMBDA_CONFIG | jq -r '.ImageUri')
+          echo "Expected Image URI: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          echo "Actual Image URI: $IMAGE_URI"
           if [ "$IMAGE_URI" == "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" ]; then
             echo "Lambda function successfully updated with the new image."
           else
