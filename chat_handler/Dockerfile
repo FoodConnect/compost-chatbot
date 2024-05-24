@@ -1,25 +1,18 @@
 FROM amazonlinux:2
 
-# Install development tools and SSL dependencies
+# Install Python and pip
 RUN yum -y update && \
-  yum -y groupinstall "Development Tools" && \
-  yum -y install openssl-devel bzip2-devel libffi-devel zlib-devel wget make
-
-# Download and compile Python 3.10 with SSL support correctly linked
-RUN cd /usr/src && \
-  wget https://www.python.org/ftp/python/3.10.2/Python-3.10.2.tgz && \
-  tar xzf Python-3.10.2.tgz && \
-  cd Python-3.10.2 && \
-  ./configure --enable-optimizations --with-ensurepip=install --with-openssl=/usr && \
-  make altinstall
+  yum -y install python3 python3-pip && \
+  yum clean all
 
 # Upgrade pip
-RUN /usr/local/bin/python3.10 -m ensurepip && \
-  /usr/local/bin/python3.10 -m pip install --upgrade pip
+RUN python3 -m pip install --upgrade pip
 
+# Set up the working directory
 WORKDIR /var/task
+
 COPY chat_handler/lambda_function.py .
 COPY chat_handler/requirements.txt .
-RUN /usr/local/bin/python3.10 -m pip install -r requirements.txt -t .
+RUN python3 -m pip install -r requirements.txt -t .
 
 CMD ["lambda_function.lambda_handler"]
