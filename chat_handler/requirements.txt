@@ -3,3 +3,7 @@ langchain
 chromadb
 PyPDF2
 openai
+langchain-core
+langchain-community
+langchain-openai
+langchain-text-splitters
