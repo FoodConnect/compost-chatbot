@@ -68,12 +68,12 @@ jobs:
           fi
 
       - name: Clean up old ECR images
-      run: |
-        echo "Cleaning up old ECR images..."
-        IMAGE_TAGS_TO_DELETE=$(aws ecr list-images --repository-name compost-chatbot/chat-handler --query 'imageIds[?imageTag!=`'$IMAGE_TAG'`]' --output json)
-        if [ "$IMAGE_TAGS_TO_DELETE" != "[]" ]; then
-          echo "Deleting the following images: $IMAGE_TAGS_TO_DELETE"
-          aws ecr batch-delete-image --repository-name compost-chatbot/chat-handler --image-ids "$IMAGE_TAGS_TO_DELETE"
-        else
-          echo "No old images to delete."
-        fi
+        run: |
+          echo "Cleaning up old ECR images..."
+          IMAGE_TAGS_TO_DELETE=$(aws ecr list-images --repository-name compost-chatbot/chat-handler --query 'imageIds[?imageTag!=`'$IMAGE_TAG'`]' --output json)
+          if [ "$IMAGE_TAGS_TO_DELETE" != "[]" ]; then
+            echo "Deleting the following images: $IMAGE_TAGS_TO_DELETE"
+            aws ecr batch-delete-image --repository-name compost-chatbot/chat-handler --image-ids "$IMAGE_TAGS_TO_DELETE"
+          else
+            echo "No old images to delete."
+          fi
