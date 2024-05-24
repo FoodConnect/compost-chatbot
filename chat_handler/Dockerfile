@@ -3,7 +3,7 @@ FROM amazonlinux:2
 # Install Dependencies for Python 3.10
 RUN yum -y update && \
   yum -y groupinstall "Development Tools" && \
-  yum -y install gcc openssl-devel bzip2-devel libffi-devel zlib-devel make
+  yum -y install openssl-devel bzip2-devel libffi-devel zlib-devel wget make
 
 # Install Python 3.10
 RUN cd /usr/src && \
