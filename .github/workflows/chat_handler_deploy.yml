@@ -29,8 +29,8 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          echo "Building Docker image..."
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f chat_handler/Dockerfile .
+          echo "Building Docker image for arm64 architecture..."
+          docker build --platform linux/arm64 -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f chat_handler/Dockerfile .
 
           echo "Pushing Docker image to ECR..."
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG

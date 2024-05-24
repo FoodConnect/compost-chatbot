@@ -4,10 +4,10 @@ WORKDIR /var/task
 
 COPY chat_handler/lambda_function.py .
 COPY chat_handler/requirements.txt .
+COPY chat_handler/lambda-entrypoint.sh .
 
 RUN python3.10 -m pip install -r requirements.txt
+RUN chmod +x /var/task/lambda-entrypoint.sh
 
-COPY chat_handler/lambda-entrypoint.sh .
-RUN chmod +x /lambda-entrypoint.sh
-
-CMD ["/lambda-entrypoint.sh", "lambda_function.lambda_handler"]
+ENTRYPOINT ["/var/task/lambda-entrypoint.sh"]
+CMD ["lambda_function.lambda_handler"]
