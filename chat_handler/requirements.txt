@@ -1,7 +1,7 @@
 boto3
 langchain
 chromadb
-PyPDF2
+pypdf
 openai
 langchain-core
 langchain-community
