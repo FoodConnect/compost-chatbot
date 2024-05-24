@@ -7,7 +7,7 @@ COPY chat_handler/requirements.txt .
 
 RUN python3.10 -m pip install -r requirements.txt
 
-COPY lambda-entrypoint.sh /lambda-entrypoint.sh
+COPY chat_handler/lambda-entrypoint.sh .
 RUN chmod +x /lambda-entrypoint.sh
 
 CMD ["/lambda-entrypoint.sh", "lambda_function.lambda_handler"]
