@@ -3,8 +3,7 @@ FROM amazonlinux:2
 # Install development tools and SSL dependencies
 RUN yum -y update && \
   yum -y groupinstall "Development Tools" && \
-  yum -y install openssl-devel bzip2-devel libffi-devel zlib-devel wget make && \
-  yum -y install openssl
+  yum -y install openssl-devel bzip2-devel libffi-devel zlib-devel wget make openssl
 
 # Download and compile Python 3.10
 RUN cd /usr/src && \
@@ -21,5 +20,7 @@ RUN /usr/local/bin/python3.10 -m ensurepip && \
 WORKDIR /var/task
 COPY chat_handler/lambda_function.py .
 COPY chat_handler/requirements.txt .
-RUN /usr/local/bin/python3.10 -m pip install -r requirements.txt -t .
+
+RUN /usr/local/bin/python3.10 -m pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org -r requirements.txt -t .
+
 CMD ["lambda_function.lambda_handler"]
