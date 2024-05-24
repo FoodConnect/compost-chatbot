@@ -1,6 +1,6 @@
 FROM amazonlinux:2
 
-RUN yup -y install python3.10
+RUN yum -y install python3.10
 
 RUN python3.10 -m ensurepip && \ 
   pip3 install --upgrade pip
