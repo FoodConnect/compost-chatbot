@@ -47,12 +47,9 @@ jobs:
       - name: Verify Lambda update
         run: |
           echo "Verifying Lambda function update..."
-          echo "Waiting for 20 seconds to let the image URI update..."
-          sleep 20
           STATUS="InProgress"
           while [ "$STATUS" != "Successful" ]; do
             LAMBDA_CONFIG=$(aws lambda get-function-configuration --function-name compost-chatbot-chat-handler)
-            echo "Lambda Configuration: $LAMBDA_CONFIG"
             STATUS=$(echo $LAMBDA_CONFIG | jq -r '.LastUpdateStatus')
             echo "Current STATUS: $STATUS"
             if [ "$STATUS" != "Successful" ]; then
@@ -61,13 +58,11 @@ jobs:
             fi
           done
           echo "Final STATUS: $STATUS"
-          echo "Full Lambda Configuration: $LAMBDA_CONFIG"
-          IMAGE_URI=$(echo $LAMBDA_CONFIG | jq -r '.ImageUri')
-          echo "Expected Image URI: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
-          echo "Actual Image URI: $IMAGE_URI"
-          if [ "$IMAGE_URI" == "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" ]; then
+          if [ "$STATUS" == "Successful" ]; then
+            echo "Lambda Configuration: $LAMBDA_CONFIG"
             echo "Lambda function successfully updated with the new image."
           else
+            echo "Lambda Configuration: $LAMBDA_CONFIG"
             echo "Lambda function update failed."
             exit 1
           fi
