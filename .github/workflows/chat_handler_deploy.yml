@@ -21,21 +21,11 @@ jobs:
         id: ecr-login
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Debug ECR Registry
-        run: |
-          echo "ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}"
-
       - name: Set Environment Variables
         run: |
           echo "ECR_REGISTRY=${{ steps.ecr-login.outputs.registry }}" >> $GITHUB_ENV
           echo "ECR_REPOSITORY=compost-chatbot/chat-handler" >> $GITHUB_ENV
           echo "IMAGE_TAG=${{ github.sha }}" >> $GITHUB_ENV
-
-      - name: Debug Environment Variables
-        run: |
-          echo "ECR_REGISTRY: $ECR_REGISTRY"
-          echo "ECR_REPOSITORY: $ECR_REPOSITORY"
-          echo "IMAGE_TAG: $IMAGE_TAG"
 
       - name: Build and push Docker image
         run: |
@@ -57,8 +47,16 @@ jobs:
       - name: Verify Lambda update
         run: |
           echo "Verifying Lambda function update..."
-          LAMBDA_CONFIG=$(aws lambda get-function-configuration --function-name compost-chatbot-chat-handler)
-          echo "Lambda Configuration: $LAMBDA_CONFIG"
+          STATUS="InProgress"
+          while [ "$STATUS" == "InProgress" ]; do
+            LAMBDA_CONFIG=$(aws lambda get-function-configuration --function-name compost-chatbot-chat-handler)
+            echo "Lambda Configuration: $LAMBDA_CONFIG"
+            STATUS=$(echo $LAMBDA_CONFIG | jq -r '.LastUpdateStatus')
+            if [ "$STATUS" == "InProgress" ]; then
+              echo "Update is still in progress. Waiting for 10 seconds..."
+              sleep 10
+            fi
+          done
           IMAGE_URI=$(echo $LAMBDA_CONFIG | jq -r '.ImageUri')
           if [ "$IMAGE_URI" == "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" ]; then
             echo "Lambda function successfully updated with the new image."
