@@ -1,0 +1,5 @@
+boto3
+langchain
+chromadb
+PyPDF2
+openai

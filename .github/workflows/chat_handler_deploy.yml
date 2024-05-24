@@ -4,21 +4,27 @@ jobs:
   chat_handler_deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Log in to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v1
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-west-2
-      - name: create_deployment_zip
+      - name: Build and push Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          ECR_REPOSITORY: compost-chatbot/chat-handler
+          IMAGE_TAG: latest
         run: |
-          sudo apt install zip
-          mkdir -p ./deployment_zip 
-          pip install snowflake-connector-python --platform manylinux2010_x86_64 --only-binary=:all: -t ./deployment_zip
-          cp ./chat_handler/lambda_function.py  ./deployment_zip
-          cd deployment_zip 
-          zip -r lambda_zip.zip *
-      - name: lambda_code_update
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f chat_handler/Dockerfile .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+      - name: Update Lambda function to use new image
         run: |
-          aws lambda update-function-code --function-name compost-chatbot-chat-handler --zip-file fileb://./deployment_zip/lambda_zip.zip
+          aws lambda update-function-code --function-name compost-chatbot-chat-handler --image-uri $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
