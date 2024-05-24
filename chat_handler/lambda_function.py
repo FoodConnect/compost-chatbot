@@ -13,7 +13,7 @@ def lambda_handler(event, context):
   body = json.loads(event.get("body", "{}"))
 
   pdf_file_name = "illinois-residential-food-scrap-composting.pdf"
-  pdf_path = os.path.join("..", pdf_file_name)
+  pdf_path = os.path.join("/var/task", pdf_file_name)
   documents = []
   loader = PyPDFLoader(pdf_path)
   documents.extend(loader.load())
