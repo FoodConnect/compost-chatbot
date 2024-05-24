@@ -1,11 +1,11 @@
 FROM amazonlinux:2
 
-# Install Dependencies for Python 3.10
+# Install dependencies for building Python 3.10
 RUN yum -y update && \
   yum -y groupinstall "Development Tools" && \
   yum -y install openssl-devel bzip2-devel libffi-devel zlib-devel wget make
 
-# Install Python 3.10
+# Download and install Python 3.10
 RUN cd /usr/src && \
   wget https://www.python.org/ftp/python/3.10.2/Python-3.10.2.tgz && \
   tar xzf Python-3.10.2.tgz && \
@@ -19,6 +19,5 @@ RUN /usr/local/bin/python3.10 -m ensurepip && \
 
 COPY chat_handler/lambda_function.py /var/task/
 COPY chat_handler/requirements.txt /var/task/
-
-RUN pip3 install -r /var/task/requirements.txt -t /var/task/
+RUN /usr/local/bin/python3.10 -m pip install -r /var/task/requirements.txt -t /var/task/
 CMD ["lambda_function.lambda_handler"]
