@@ -25,13 +25,17 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
           ECR_REPOSITORY: compost-chatbot/chat-handler
-          IMAGE_TAG: latest
+          IMAGE_TAG: ${{ github.sha }} # Use GitHub SHA for unique tagging
         run: |
           echo "Building Docker image..."
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f chat_handler/Dockerfile .
 
           echo "Pushing Docker image to ECR..."
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+      - name: Print Image URI
+        run: |
+          echo "Image URI to be used: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
       - name: Update Lambda function to use new image
         run: |
