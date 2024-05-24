@@ -58,6 +58,7 @@ jobs:
             fi
           done
           echo "Final STATUS: $STATUS"
+          echo "Full Lambda Configuration: $LAMBDA_CONFIG"
           IMAGE_URI=$(echo $LAMBDA_CONFIG | jq -r '.ImageUri')
           echo "Expected Image URI: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
           echo "Actual Image URI: $IMAGE_URI"
