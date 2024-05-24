@@ -25,23 +25,25 @@ jobs:
         run: |
           echo "ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}"
 
-      - name: Build and push Docker image
-        env:
-          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
-          ECR_REPOSITORY: compost-chatbot/chat-handler
-          IMAGE_TAG: ${{ github.sha }} # Use GitHub SHA for unique tagging
+      - name: Set Environment Variables
         run: |
-          echo "Building Docker image..."
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f chat_handler/Dockerfile .
-
-          echo "Pushing Docker image to ECR..."
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "ECR_REGISTRY=${{ steps.ecr-login.outputs.registry }}" >> $GITHUB_ENV
+          echo "ECR_REPOSITORY=compost-chatbot/chat-handler" >> $GITHUB_ENV
+          echo "IMAGE_TAG=${{ github.sha }}" >> $GITHUB_ENV
 
       - name: Debug Environment Variables
         run: |
           echo "ECR_REGISTRY: $ECR_REGISTRY"
           echo "ECR_REPOSITORY: $ECR_REPOSITORY"
           echo "IMAGE_TAG: $IMAGE_TAG"
+
+      - name: Build and push Docker image
+        run: |
+          echo "Building Docker image..."
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f chat_handler/Dockerfile .
+
+          echo "Pushing Docker image to ECR..."
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
       - name: Print Image URI
         run: |
