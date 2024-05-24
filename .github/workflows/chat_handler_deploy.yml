@@ -6,25 +6,47 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-west-2
+
       - name: Log in to Amazon ECR
         id: ecr-login
         uses: aws-actions/amazon-ecr-login@v1
+
       - name: Build and push Docker image
         env:
           ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
           ECR_REPOSITORY: compost-chatbot/chat-handler
           IMAGE_TAG: latest
         run: |
+          echo "Building Docker image..."
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f chat_handler/Dockerfile .
+
+          echo "Pushing Docker image to ECR..."
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
       - name: Update Lambda function to use new image
         run: |
+          echo "Updating Lambda function..."
           aws lambda update-function-code --function-name compost-chatbot-chat-handler --image-uri $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+      - name: Verify Lambda update
+        run: |
+          echo "Verifying Lambda function update..."
+          LAMBDA_CONFIG=$(aws lambda get-function-configuration --function-name compost-chatbot-chat-handler)
+          echo "Lambda Configuration: $LAMBDA_CONFIG"
+          IMAGE_URI=$(echo $LAMBDA_CONFIG | jq -r '.ImageUri')
+          if [ "$IMAGE_URI" == "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" ]; then
+            echo "Lambda function successfully updated with the new image."
+          else
+            echo "Lambda function update failed."
+            exit 1
+          fi
