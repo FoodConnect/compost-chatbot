@@ -1,0 +1,79 @@
+name: vector_embeddings_handler_deploy
+on: [push]
+jobs:
+  chat_handler_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+
+      - name: Log in to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Set Environment Variables
+        run: |
+          echo "ECR_REGISTRY=${{ steps.ecr-login.outputs.registry }}" >> $GITHUB_ENV
+          echo "ECR_REPOSITORY=compost-chatbot/vector-embeddings-handler" >> $GITHUB_ENV
+          echo "IMAGE_TAG=${{ github.sha }}" >> $GITHUB_ENV
+
+      - name: Build and push Docker image
+        run: |
+          echo "Building Docker image for x86_64 architecture..."
+          docker build --platform linux/amd64 -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f vector_embeddings_handler/Dockerfile . 
+
+          echo "Pushing Docker image to ECR..."
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+      - name: Print Image URI
+        run: |
+          echo "Image URI to be used: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
+      - name: Update Lambda function to use new image
+        run: |
+          echo "Updating Lambda function..."
+          aws lambda update-function-code --function-name compost-chatbot-vector-embeddings-handler --image-uri $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+      - name: Verify Lambda update
+        run: |
+          echo "Verifying Lambda function update..."
+          STATUS="InProgress"
+          while [ "$STATUS" != "Successful" ]; do
+            LAMBDA_CONFIG=$(aws lambda get-function-configuration --function-name compost-chatbot-vector-embeddings-handler)
+            STATUS=$(echo $LAMBDA_CONFIG | jq -r '.LastUpdateStatus')
+            echo "Current STATUS: $STATUS"
+            if [ "$STATUS" != "Successful" ]; then
+              echo "Update is still in progress. Waiting for 10 seconds..."
+              sleep 10
+            fi
+          done
+          echo "Final STATUS: $STATUS"
+          if [ "$STATUS" == "Successful" ]; then
+            echo "Lambda Configuration: $LAMBDA_CONFIG"
+            echo "Lambda function successfully updated with the new image."
+          else
+            echo "Lambda Configuration: $LAMBDA_CONFIG"
+            echo "Lambda function update failed."
+            exit 1
+          fi
+
+      - name: Clean up old ECR images
+        run: |
+          echo "Cleaning up old ECR images..."
+          IMAGE_TAGS_TO_DELETE=$(aws ecr list-images --repository-name compost-chatbot/vector-embeddings-handler --query 'imageIds[?imageTag!=`'$IMAGE_TAG'`]' --output json)
+          if [ "$IMAGE_TAGS_TO_DELETE" != "[]" ]; then
+            echo "Deleting the following images: $IMAGE_TAGS_TO_DELETE"
+            aws ecr batch-delete-image --repository-name compost-chatbot/vector-embeddings-handler --image-ids "$IMAGE_TAGS_TO_DELETE"
+          else
+            echo "No old images to delete."
+          fi
