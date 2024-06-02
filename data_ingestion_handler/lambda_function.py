@@ -1,3 +1,4 @@
+import os
 import json
 import boto3
 import fitz
@@ -12,6 +13,9 @@ def lambda_handler(event, context):
     bucket_name = event['Records'][0]['s3']['bucket']['name']
     key = event['Records'][0]['s3']['object']['key']
 
+    filename = os.path.basename(key)
+    title = os.path.splitext(filename)[0]
+
     response = s3_client.get_object(Bucket=bucket_name, Key=key)
     file_content = response['Body'].read()
 
@@ -24,7 +28,7 @@ def lambda_handler(event, context):
           Item={
               'documentId': key,
               'text': text,
-              'title': 'Extracted from PDF',  
+              'title': title,  
           }
       )
     return {
