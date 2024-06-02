@@ -1,8 +1,2 @@
 boto3
-langchain
-openai
-langchain-core
-langchain-community
-langchain-openai
-langchain-text-splitters
-faiss-cpu
+PyMuPDF

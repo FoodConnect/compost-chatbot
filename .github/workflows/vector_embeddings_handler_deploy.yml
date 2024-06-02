@@ -30,7 +30,7 @@ jobs:
       - name: Build and push Docker image
         run: |
           echo "Building Docker image for x86_64 architecture..."
-          docker build --platform linux/amd64 -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f vector_embeddings_handler/Dockerfile . 
+          docker build --platform linux/amd64 -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f vector_embeddings_handler/Dockerfile .
 
           echo "Pushing Docker image to ECR..."
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
