@@ -29,6 +29,7 @@ def lambda_handler(event, context):
               'documentId': key,
               'text': text,
               'title': title,  
+              'status': 'pending',
           }
       )
     return {
