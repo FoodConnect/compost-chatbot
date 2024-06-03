@@ -7,7 +7,6 @@ from langchain.chains import RetrievalQA
 from langchain_core.prompts import PromptTemplate
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
-import faiss
 
 
 def lambda_handler(event, context):

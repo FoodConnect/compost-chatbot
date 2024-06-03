@@ -1,5 +1,6 @@
 import os
 import json
+import uuid
 import boto3
 import fitz
 
@@ -11,10 +12,12 @@ def lambda_handler(event, context):
     table = dynamodb.Table('DocumentMetadata')
 
     bucket_name = event['Records'][0]['s3']['bucket']['name']
+    
     key = event['Records'][0]['s3']['object']['key']
-
     filename = os.path.basename(key)
     title = os.path.splitext(filename)[0]
+
+    documentId = str(uuid.uuid4())
 
     response = s3_client.get_object(Bucket=bucket_name, Key=key)
     file_content = response['Body'].read()
@@ -26,7 +29,7 @@ def lambda_handler(event, context):
 
     response = table.put_item(
           Item={
-              'documentId': key,
+              'documentId': documentId,
               'text': text,
               'title': title,  
               'status': 'pending',
