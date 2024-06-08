@@ -6,8 +6,12 @@ from langchain.schema import Document
 from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
+import logging
 
 # This function synchronizes documents stored in DynamoDB with a FAISS vector index. It splits the documents into smaller chunks, generates embeddings, creates a FAISS index, stores the index in S3, and keeps track of vector IDs in DynamoDB. It also includes logic to reload and update the vectors in the FAISS index if the documents are updated.
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 def lambda_handler(event, context):
   try:
@@ -15,6 +19,7 @@ def lambda_handler(event, context):
     dynamodb = boto3.client('dynamodb')
 
     def query_documents_by_status(status):
+      logger.info("Querying documents by status")
       response = dynamodb.query(
         TableName = 'DocumentMetadata',
         IndexName = 'status-index',
@@ -22,17 +27,21 @@ def lambda_handler(event, context):
         ExpressionAttributeNames={'#s': 'status'},
         ExpressionAttributeValues={':status': {'S': status}}
       )
+      logger.info(f"Documents with status '{status}': {response.get('Items', [])}")
       return response.get('Items', [])
 
     def split_document(document, documentId, title):
+      logger.info(f"Splitting document {documentId}")
       chunk_size = 512
       chunk_overlap = 32
       text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
-
-      return [Document(page_content=chunk, metadata={"documentId": documentId, "title": title})
+      documents = [Document(page_content=chunk, metadata={"documentId": documentId, "title": title})
               for chunk in text_splitter.split_text(document)]
+      logger.info(f"Split {documentId} into {len(documents)} chunks")
+      return documents
               
     def store_vector_ids(document_id, vector_ids):
+      logger.info(f"Storing vector IDs for document {document_id}")
       table_name = "VectorMetadata"
       dynamodb.put_item(
         TableName = table_name,
@@ -43,6 +52,7 @@ def lambda_handler(event, context):
       )
 
     def get_vectors_from_faiss_index(documents, db, index_to_docstore_id):
+      logger.info("Getting vectors from FAISS index")
       document_vectors = {}
       for i in range(len(documents)):
         document = db.docstore.search(index_to_docstore_id[i])
@@ -51,14 +61,23 @@ def lambda_handler(event, context):
             document_vectors[document.metadata["documentId"]] = [index_to_docstore_id[i]]
           else:
             document_vectors[document.metadata["documentId"]].append(index_to_docstore_id[i])
+      logger.info(f"Retrieved vector IDs from FAISS index")
       return document_vectors
 
 
     # Query documents with 'pending' status
     documents = query_documents_by_status('pending')
 
+    if not documents:
+      logger.info("No pending documents found")
+      return {
+        'statusCode': 200,
+        'body': 'No pending documents found.'
+      }
+
     # Split the documents into chunks
     split_documents = [split_document(document["text"]["S"], document["documentId"]["S"], document["title"]["S"]) for document in documents]
+    logger.info("Documents split into chunks")
 
     os.environ["OPENAI_API_KEY"] = getpass.getpass()
     embeddings_model = OpenAIEmbeddings(
@@ -67,6 +86,7 @@ def lambda_handler(event, context):
 
     # Create a FAISS index from the split documents
     db = FAISS.from_documents(split_documents, embeddings_model)
+    logger.info("FAISS index created")
 
     # Save the FAISS index locally
     file_path = "/tmp/"
@@ -75,6 +95,7 @@ def lambda_handler(event, context):
 
     db.save_local(index_name=f"{base_file_name}.faiss", folder_path=file_path)
     db.save_local(index_name=f"{base_file_name}.pkl", folder_path=file_path)
+    logger.info("FAISS index saved locally")
 
 
     # Upload the FAISS index files to S3
@@ -94,6 +115,7 @@ def lambda_handler(event, context):
         Bucket="compost-chatbot-bucket",
         Key=pkl_file_path
     )
+    logger.info("FAISS index uploaded to S3")
 
     # Retrieve vectors from the FAISS index and store their IDs in DynamoDB
     document_vectors = get_vectors_from_faiss_index(split_documents, db, db.index_to_docstore_id)
@@ -105,6 +127,7 @@ def lambda_handler(event, context):
     base_file_name = "faiss_index"
     s3.download_file('compost-chatbot-bucket', f"indices/{base_file_name}.faiss", f"{file_path}{base_file_name}.faiss")
     s3.download_file('compost-chatbot-bucket', f"indices/{base_file_name}.pkl", f"{file_path}{base_file_name}.pkl")
+    logger.info("FAISS index downloaded from S3")
 
     db = FAISS.load_local(
           index_name="my_faiss",
@@ -143,11 +166,14 @@ def lambda_handler(event, context):
             'vectors_stored': sum(len(vectors) for vectors in document_vectors.values())
         }
     
+    logger.info(f"Function completed successfully: {response_message}")
+    
     return {
         'statusCode': 200,
         'body': response_message
       }
   except Exception as e:
+    logger.error(f"Error: {str(e)}")
     return {
       'statusCode': 500,
       'body': str(e)
