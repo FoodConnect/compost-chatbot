@@ -149,6 +149,7 @@ def lambda_handler(event, context):
           index_name="my_faiss",
           folder_path=file_path,
           embeddings=embeddings_model,
+          allow_dangerous_deserialization=True,
       )
     
     # Update or delete vectors as needed
