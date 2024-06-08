@@ -186,9 +186,7 @@ def lambda_handler(event, context):
     logger.error(f"Error: {str(e)}")
     return {
       'statusCode': 500,
-      'body': { 'Error': str(e), 
-                'memory_usage': memory_usage 
-          }
+      'body': str(e)
     }
   
 
