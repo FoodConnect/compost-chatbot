@@ -1,4 +1,5 @@
 import os
+import resource
 import boto3
 from pathlib import Path
 from langchain.schema import Document
@@ -104,8 +105,7 @@ def lambda_handler(event, context):
 
     logger.info(f"Saving FAISS index to {faiss_local_path} and {pkl_local_path}")
 
-    db.save_local(index_name=faiss_local_path, folder_path=file_path)
-    db.save_local(index_name=pkl_local_path, folder_path=file_path)
+    db.save_local(index_name=base_file_name, folder_path=file_path)
     logger.info("FAISS index saved locally")
 
     if not os.path.exists(faiss_local_path):
