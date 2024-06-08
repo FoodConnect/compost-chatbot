@@ -50,7 +50,7 @@ def lambda_handler(event, context):
         TableName = table_name,
         Item = {
           'documentId': {'S': document_id},
-          'vectorIds': {'SS': vectors}
+          'vectors': {'SS': vectors}
         }
       )
 
@@ -161,7 +161,7 @@ def lambda_handler(event, context):
           )
 
           if "Item" in vectors:
-              vectors = vectors["Item"]["vectorIds"]["SS"]
+              vectors = vectors["Item"]["vectors"]["SS"]
               db.delete(vectors)
 
           content = document["text"]["S"]
