@@ -146,7 +146,7 @@ def lambda_handler(event, context):
     logger.info("FAISS index downloaded from S3")
 
     db = FAISS.load_local(
-          index_name="my_faiss",
+          index_name=base_file_name,
           folder_path=file_path,
           embeddings=embeddings_model,
           allow_dangerous_deserialization=True,
