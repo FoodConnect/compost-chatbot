@@ -17,10 +17,10 @@ def lambda_handler(event, context):
       response = dynamodb.query(
         TableName = 'DocumentMetadata',
         IndexName = 'status-index',
-        KeyConditionExpression = 'status = :status',
+        KeyConditionExpression = '#s = :status',
+        ExpressionAttributeNames={'#s': 'status'},
         ExpressionAttributeValues={':status': {'S': status}}
       )
-    
       return response.get('Items', [])
 
     def split_document(document, documentId, title):
