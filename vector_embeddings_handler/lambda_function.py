@@ -75,7 +75,9 @@ def lambda_handler(event, context):
       }
 
     # Split the documents into chunks
-    split_documents = [split_document(document["text"]["S"], document["documentId"]["S"], document["title"]["S"]) for document in documents]
+    all_split_documents = []
+    for document in documents:
+      all_split_documents.extend(split_document(document["text"]["S"], document["documentId"]["S"], document["title"]["S"]))
     logger.info("Documents split into chunks")
 
     openai_api_key = os.getenv('OPENAI_API_KEY')
@@ -86,7 +88,7 @@ def lambda_handler(event, context):
     )
 
     # Create a FAISS index from the split documents
-    db = FAISS.from_documents(split_documents, embeddings_model)
+    db = FAISS.from_documents(all_split_documents, embeddings_model)
     logger.info("FAISS index created")
 
     # Save the FAISS index locally
@@ -119,7 +121,7 @@ def lambda_handler(event, context):
     logger.info("FAISS index uploaded to S3")
 
     # Retrieve vectors from the FAISS index and store their IDs in DynamoDB
-    document_vectors = get_vectors_from_faiss_index(split_documents, db, db.index_to_docstore_id)
+    document_vectors = get_vectors_from_faiss_index(all_split_documents, db, db.index_to_docstore_id)
     for documentId, vectors in document_vectors.items():
       store_vector_ids(documentId, vectors)
 
