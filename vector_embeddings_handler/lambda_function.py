@@ -1,3 +1,5 @@
+import os
+import getpass
 import boto3
 from pathlib import Path
 from langchain.schema import Document
@@ -6,7 +8,6 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 
 # This function synchronizes documents stored in DynamoDB with a FAISS vector index. It splits the documents into smaller chunks, generates embeddings, creates a FAISS index, stores the index in S3, and keeps track of vector IDs in DynamoDB. It also includes logic to reload and update the vectors in the FAISS index if the documents are updated.
-
 
 def lambda_handler(event, context):
   try:
@@ -59,6 +60,7 @@ def lambda_handler(event, context):
     # Split the documents into chunks
     split_documents = [split_document(document["text"]["S"], document["documentId"]["S"], document["title"]["S"]) for document in documents]
 
+    os.environ["OPENAI_API_KEY"] = getpass.getpass()
     embeddings_model = OpenAIEmbeddings(
       client = None, model = "text-embedding-3-small"
     )
