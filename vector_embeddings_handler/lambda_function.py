@@ -1,5 +1,4 @@
 import os
-import getpass
 import boto3
 from pathlib import Path
 from langchain.schema import Document
@@ -79,7 +78,9 @@ def lambda_handler(event, context):
     split_documents = [split_document(document["text"]["S"], document["documentId"]["S"], document["title"]["S"]) for document in documents]
     logger.info("Documents split into chunks")
 
-    os.environ["OPENAI_API_KEY"] = getpass.getpass()
+    openai_api_key = os.getenv('OPENAI_API_KEY')
+    if not openai_api_key:
+      raise ValueError("OPENAI_API_KEY environment variable is not set")
     embeddings_model = OpenAIEmbeddings(
       client = None, model = "text-embedding-3-small"
     )
