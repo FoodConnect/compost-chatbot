@@ -99,9 +99,19 @@ def lambda_handler(event, context):
     Path(file_path).mkdir(parents=True, exist_ok=True)
     base_file_name = "faiss_index"
 
-    db.save_local(index_name=f"{base_file_name}.faiss", folder_path=file_path)
-    db.save_local(index_name=f"{base_file_name}.pkl", folder_path=file_path)
+    faiss_local_path = f"{file_path}{base_file_name}.faiss"
+    pkl_local_path = f"{file_path}{base_file_name}.pkl"
+
+    logger.info(f"Saving FAISS index to {faiss_local_path} and {pkl_local_path}")
+
+    db.save_local(index_name=faiss_local_path, folder_path=file_path)
+    db.save_local(index_name=pkl_local_path, folder_path=file_path)
     logger.info("FAISS index saved locally")
+
+    if not os.path.exists(faiss_local_path):
+            raise FileNotFoundError(f"FAISS file {faiss_local_path} not found")
+    if not os.path.exists(pkl_local_path):
+        raise FileNotFoundError(f"PKL file {pkl_local_path} not found")
 
 
     # Upload the FAISS index files to S3
