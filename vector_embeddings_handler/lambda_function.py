@@ -15,6 +15,9 @@ logger.setLevel(logging.INFO)
 def lambda_handler(event, context):
   try:
 
+    logger.info(f"Lambda function memory size: {os.environ['AWS_LAMBDA_FUNCTION_MEMORY_SIZE']} MB")
+    logger.info(f"Lambda log group name: {os.environ['AWS_LAMBDA_LOG_GROUP_NAME']}")
+
     dynamodb = boto3.client('dynamodb')
 
     def query_documents_by_status(status):
@@ -161,12 +164,16 @@ def lambda_handler(event, context):
 
           store_vector_ids(documentId, document_vectors[documentId])
     
+    memory_usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    logger.info(f"Memory usage: {memory_usage} KB")
+    
 
     response_message = {
             'status': 'success',
             'message': 'Processed documents and updated FAISS index.',
             'documents_processed': len(documents),
-            'vectors_stored': sum(len(vectors) for vectors in document_vectors.values())
+            'vectors_stored': sum(len(vectors) for vectors in document_vectors.values()),
+            'memory_usage': memory_usage
         }
     
     logger.info(f"Function completed successfully: {response_message}")
@@ -179,7 +186,9 @@ def lambda_handler(event, context):
     logger.error(f"Error: {str(e)}")
     return {
       'statusCode': 500,
-      'body': str(e)
+      'body': { 'Error': str(e), 
+                'memory_usage': memory_usage 
+          }
     }
   
 
