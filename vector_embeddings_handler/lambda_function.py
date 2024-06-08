@@ -155,19 +155,22 @@ def lambda_handler(event, context):
     # Update or delete vectors as needed
     for document in documents:
           documentId = document["documentId"]["S"]
-          vectors = dynamodb.get_item(
+          response = dynamodb.get_item(
               TableName="VectorMetadata",
               Key={"documentId": {"S": documentId}},
           )
 
           if "Item" in vectors:
-              vectors = vectors["Item"]["vectors"]["SS"]
+              vectors = response["Item"]["vectors"]["SS"]
+              logger.info(f"Deleting vectors for document {documentId}: {vectors}")
               db.delete(vectors)
 
-          content = document["text"]["S"]
+          text = document["text"]["S"]
           title = document["title"]["S"]
-          document_splits = split_document(content, documentId, title)
+          document_splits = split_document(text, documentId, title)
+          logger.info(f"Split document {documentId} into {len(document_splits)} chunks for updating vectors")
           document_vectors = get_vectors_from_faiss_index(document_splits, db, db.index_to_docstore_id)
+          logger.info(f"Updating document {documentId} with vectors: {document_vectors}")
 
           db.save_local(index_name=base_file_name, folder_path=file_path)
           s3.upload_file(Filename=f"{file_path}/{base_file_name}.faiss", Bucket="compost-chatbot-bucket", Key=faiss_file_path)
