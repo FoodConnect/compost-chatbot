@@ -43,14 +43,14 @@ def lambda_handler(event, context):
       logger.info(f"Split {documentId} into {len(documents)} chunks")
       return documents
               
-    def store_vector_ids(document_id, vector_ids):
+    def store_vectors_to_dynamo_db(document_id, vectors):
       logger.info(f"Storing vector IDs for document {document_id}")
       table_name = "VectorMetadata"
       dynamodb.put_item(
         TableName = table_name,
         Item = {
           'documentId': {'S': document_id},
-          'vectorIds': {'SS': vector_ids}
+          'vectorIds': {'SS': vectors}
         }
       )
 
@@ -136,7 +136,7 @@ def lambda_handler(event, context):
     # Retrieve vectors from the FAISS index and store their IDs in DynamoDB
     document_vectors = get_vectors_from_faiss_index(all_split_documents, db, db.index_to_docstore_id)
     for documentId, vectors in document_vectors.items():
-      store_vector_ids(documentId, vectors)
+      store_vectors_to_dynamo_db(documentId, vectors)
 
      # Reload the FAISS index from S3
     file_path = "/tmp/"
@@ -173,7 +173,7 @@ def lambda_handler(event, context):
           s3.upload_file(Filename=f"{file_path}/{base_file_name}.faiss", Bucket="compost-chatbot-bucket", Key=faiss_file_path)
           s3.upload_file(Filename=f"{file_path}/{base_file_name}.pkl", Bucket="compost-chatbot-bucket", Key=pkl_file_path)
 
-          store_vector_ids(documentId, document_vectors[documentId])
+          store_vectors_to_dynamo_db(documentId, vectors)
     
     memory_usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     logger.info(f"Memory usage: {memory_usage} KB")
