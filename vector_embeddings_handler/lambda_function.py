@@ -29,7 +29,7 @@ def lambda_handler(event, context):
       text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
 
       return [Document(page_content=chunk, metadata={"documentId": documentId, "title": title})
-              for chunk in text_splitter.split(document)]
+              for chunk in text_splitter.split_text(document)]
               
     def store_vector_ids(document_id, vector_ids):
       table_name = "VectorMetadata"
