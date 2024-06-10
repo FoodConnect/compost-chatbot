@@ -59,10 +59,8 @@ jobs:
           done
           echo "Final STATUS: $STATUS"
           if [ "$STATUS" == "Successful" ]; then
-            echo "Lambda Configuration: $LAMBDA_CONFIG"
             echo "Lambda function successfully updated with the new image."
           else
-            echo "Lambda Configuration: $LAMBDA_CONFIG"
             echo "Lambda function update failed."
             exit 1
           fi
