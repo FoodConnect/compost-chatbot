@@ -42,7 +42,7 @@ jobs:
       - name: Update Lambda function to use new image
         run: |
           echo "Updating Lambda function..."
-          aws lambda update-function-code --function-name compost-chatbot-chat-handler --image-uri $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          aws lambda update-function-code --function-name compost-chatbot-chat-handler --image-uri $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG > /dev/null
 
       - name: Verify Lambda update
         run: |
