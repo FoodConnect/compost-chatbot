@@ -1,9 +1,6 @@
 boto3
 langchain
-chromadb
-pypdf
-openai
 langchain-core
 langchain-community
 langchain-openai
-langchain-text-splitters
+faiss-cpu
